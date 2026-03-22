@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>&#127927; ぶらばん。スケジュール管理</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0a0a;
+  --panel:#161010;
+  --panel2:#1e0808;
+  --bd:#c0001a;
+  --bd2:#7a0015;
+  --green:#e8c170;
+  --yellow:#e8c170;
+  --blue:#c8a87a;
+  --purple:#d4905a;
+  --red:#c0001a;
+  --text:#f0ece8;
+  --muted:#7a6055;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'DotGothic16',monospace;color:var(--text);min-height:100vh;padding:12px 12px 80px;max-width:500px;margin:0 auto;}
+.pbox{background:var(--panel);border:3px solid var(--bd);box-shadow:4px 4px 0 rgba(0,0,0,.6);margin-bottom:12px;padding:14px;}
+.header{background:#0d0d1a;border:3px solid var(--bd);box-shadow:4px 4px 0 rgba(0,0,0,.6);padding:12px 14px;margin-bottom:10px;text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,var(--bd) 0,var(--bd) 6px,#000 6px,#000 12px);}
+.header-title{font-family:'Press Start 2P',monospace;font-size:.65rem;color:var(--bd);text-shadow:2px 2px 0 #8b0000;letter-spacing:1px;}
+.header-sub{font-size:.7rem;color:var(--muted);margin-top:4px;}
+.blink{animation:blink 1s steps(1) infinite;}
+@keyframes blink{50%{opacity:0;}}
+.tab-nav{display:flex;background:var(--panel2);border:3px solid var(--bd2);box-shadow:3px 3px 0 rgba(0,0,0,.5);margin-bottom:12px;}
+.tab-btn{flex:1;text-align:center;padding:10px 4px 8px;font-size:.68rem;color:var(--muted);cursor:pointer;border-right:1px solid var(--bd2);font-family:'DotGothic16',monospace;line-height:1.3;}
+.tab-btn:last-child{border-right:none;}
+.tab-btn.active{background:rgba(233,69,96,.15);color:var(--bd);}
+.tab-btn .ti{font-size:1rem;display:block;margin-bottom:2px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.week-bar{background:var(--panel2);border:3px solid var(--bd2);box-shadow:3px 3px 0 rgba(0,0,0,.5);padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.pix-select{background:#0a0a1a;border:2px solid var(--bd2);color:var(--text);font-family:'DotGothic16',monospace;font-size:.8rem;padding:5px 8px;flex:1;min-width:0;}
+.pix-select:focus{outline:none;border-color:var(--bd);}
+.pix-input{background:#0a0a1a;border:2px solid var(--bd2);color:var(--text);font-family:'DotGothic16',monospace;font-size:.82rem;padding:6px 10px;width:100%;}
+.pix-input:focus{outline:none;border-color:var(--bd);}
+.sec-title{font-family:'Press Start 2P',monospace;font-size:.5rem;color:var(--bd);letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--bd2);}
+.vtr-card{background:#120808;border:2px solid var(--bd2);margin-bottom:10px;overflow:hidden;}
+.vtr-header{background:var(--panel2);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:2px solid var(--bd2);}
+.vtr-header:hover{background:#1a2a5a;}
+.vtr-name{font-size:.85rem;font-weight:bold;color:var(--text);}
+.vtr-week{font-size:.62rem;color:var(--muted);margin-top:2px;}
+.vtr-body{padding:12px;}
+.crew-row{display:flex;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--bd2);}
+.crew-row:last-child{border-bottom:none;}
+.crew-label{font-size:.68rem;color:var(--muted);width:76px;flex-shrink:0;padding-top:1px;}
+.crew-value{font-size:.82rem;color:var(--text);flex:1;}
+.crew-value.empty{color:var(--muted);font-size:.75rem;}
+.vtr-memo{background:#0a0a1a;border:1px solid var(--bd2);padding:8px;margin-top:8px;font-size:.75rem;color:var(--muted);line-height:1.6;}
+.rpg-btn{font-family:'DotGothic16',monospace;font-size:.82rem;font-weight:bold;padding:8px 16px;border:3px solid var(--bd);background:rgba(233,69,96,.15);color:var(--bd);cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+.rpg-btn:active{transform:translate(2px,2px);box-shadow:none;}
+.rpg-btn.sm{padding:4px 10px;font-size:.7rem;}
+.rpg-btn.green{border-color:var(--green);color:var(--green);background:rgba(78,204,163,.1);box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+.rpg-btn.gray{border-color:var(--muted);color:var(--muted);background:rgba(121,134,203,.1);box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+.rpg-btn.yellow{border-color:var(--yellow);color:var(--yellow);background:rgba(245,166,35,.1);box-shadow:3px 3px 0 rgba(0,0,0,.5);}
+.form-row{margin-bottom:12px;}
+.form-label{font-size:.72rem;color:var(--muted);margin-bottom:5px;}
+.form-label span{color:var(--red);margin-left:2px;}
+.select-with-other{display:flex;flex-direction:column;gap:6px;}
+.share-area{background:#0a0a1a;border:2px solid var(--bd2);padding:10px 12px;margin-top:8px;max-height:300px;overflow-y:auto;}
+.share-text{font-size:.72rem;color:var(--muted);white-space:pre-wrap;line-height:1.7;}
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--panel);border:3px solid var(--bd);box-shadow:6px 6px 0 rgba(0,0,0,.6);padding:18px;width:100%;max-width:440px;margin:auto;}
+.modal-title{font-family:'Press Start 2P',monospace;font-size:.58rem;color:var(--bd);margin-bottom:16px;}
+.modal-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;}
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--panel2);border:3px solid var(--green);box-shadow:3px 3px 0 rgba(0,0,0,.5);padding:8px 18px;font-size:.78rem;color:var(--text);transition:transform .2s;z-index:200;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.row-btw{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.divider{height:1px;background:var(--bd2);margin:4px 0 12px;}
+.empty-msg{font-size:.78rem;color:var(--muted);text-align:center;padding:24px 0;}
+.badge-week{font-family:'Press Start 2P',monospace;font-size:.45rem;color:var(--yellow);background:rgba(245,166,35,.1);border:1px solid var(--yellow);padding:2px 6px;}
+.week-row{display:flex;align-items:stretch;border:1px solid var(--bd2);margin-bottom:8px;overflow:hidden;}
+.week-row-label{background:var(--panel2);padding:8px 10px;white-space:nowrap;border-right:1px solid var(--bd2);min-width:88px;display:flex;flex-direction:column;justify-content:center;gap:2px;}
+.wrl-name{color:var(--yellow);font-size:.72rem;font-weight:bold;}
+.wrl-date{color:var(--muted);font-size:.6rem;}
+.week-row-body{flex:1;padding:8px 10px;background:#120808;}
+.crew-mini{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin-bottom:6px;}
+.crew-mini-row{display:flex;align-items:baseline;gap:4px;font-size:.7rem;}
+.crew-mini-lbl{color:var(--muted);font-size:.62rem;white-space:nowrap;flex-shrink:0;}
+.crew-mini-val{color:var(--text);font-weight:bold;}
+.vtr-title-mini{font-size:.75rem;color:var(--yellow);margin-bottom:5px;font-weight:bold;}
+.week-add-btn{font-size:.65rem;color:var(--green);cursor:pointer;text-decoration:underline;}
+.cal-year-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cal-year-lbl{font-family:'Press Start 2P',monospace;font-size:.6rem;color:var(--bd);}
+.month-block{background:var(--panel);border:3px solid var(--bd);box-shadow:4px 4px 0 rgba(0,0,0,.6);margin-bottom:14px;overflow:hidden;}
+.month-header{background:var(--panel2);border-bottom:2px solid var(--bd2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+.month-name{font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--bd);}
+.month-stats{font-size:.62rem;color:var(--muted);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-head{text-align:center;font-size:.58rem;padding:4px 1px;border-right:1px solid rgba(83,52,131,.3);background:var(--panel2);}
+.cal-cell{min-height:18px;background:#120808;border-right:1px solid rgba(83,52,131,.2);}
+.cal-cell.ec{background:rgba(0,0,0,.25);}
+.cal-cell.tc{background:rgba(233,69,96,.08);}
+.cal-day{font-size:.6rem;text-align:right;padding:2px 3px;}
+.ev-rec{background:rgba(233,69,96,.25);border-left:2px solid var(--bd);font-size:.52rem;color:var(--bd);padding:1px 3px;line-height:1.4;word-break:break-all;}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:500px;background:var(--panel);border-top:3px solid var(--bd);display:flex;z-index:50;}
+.nav-btn{flex:1;text-align:center;padding:8px 2px 6px;font-size:.55rem;color:var(--muted);cursor:pointer;border-right:1px solid var(--bd2);font-family:'DotGothic16',monospace;}
+.nav-btn:last-child{border-right:none;}
+.nav-btn.active{background:rgba(233,69,96,.15);color:var(--bd);}
+.nav-btn .ni{font-size:1rem;display:block;margin-bottom:1px;}
+/* ピクセルアート装飾 */
+.px-castle{display:inline-block;width:32px;height:32px;image-rendering:pixelated;background:
+  linear-gradient(transparent 0px,transparent 2px,
+  #c0001a 2px,#c0001a 4px,transparent 4px,transparent 6px,
+  #c0001a 6px,#c0001a 8px,transparent 8px,transparent 10px,
+  #888 10px,#888 32px) no-repeat,
+  radial-gradient(circle,#c0001a 1px,transparent 1px) 4px 2px / 4px 4px,
+  radial-gradient(circle,#c0001a 1px,transparent 1px) 12px 0px / 4px 4px,
+  radial-gradient(circle,#c0001a 1px,transparent 1px) 20px 2px / 4px 4px;
+  font-size:0;
+}
+.px-deco{position:fixed;pointer-events:none;opacity:.12;image-rendering:pixelated;font-size:28px;z-index:0;}
+.px-deco-tl{top:80px;left:4px;}
+.px-deco-tr{top:120px;right:4px;}
+.px-deco-bl{bottom:100px;left:4px;}
+.px-deco-br{bottom:140px;right:4px;}
+.px-deco-m{top:50%;left:2px;transform:translateY(-50%);}
+
+</style>
+</head>
+<body>
+
+<!-- ピクセルアート背景装飾 -->
+<div style="position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden">
+  <!-- 左上：お城 -->
+  <div style="position:absolute;top:90px;left:6px;opacity:.15;image-rendering:pixelated;font-size:1px;line-height:1">
+    <canvas id="px-castle" width="24" height="28"></canvas>
+  </div>
+  <!-- 右上：カメラ -->
+  <div style="position:absolute;top:160px;right:6px;opacity:.15;font-size:32px">🏯</div>
+  <!-- 左中：ラーメン -->
+  <div style="position:absolute;top:45%;left:4px;opacity:.12;font-size:28px">🍜</div>
+  <!-- 右中：マイク -->
+  <div style="position:absolute;top:55%;right:4px;opacity:.12;font-size:28px">🎤</div>
+  <!-- 左下：台本 -->
+  <div style="position:absolute;bottom:110px;left:4px;opacity:.12;font-size:28px">📋</div>
+  <!-- 右下：カメラ -->
+  <div style="position:absolute;bottom:160px;right:4px;opacity:.12;font-size:28px">🎥</div>
+</div>
+<div class="header">
+  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:8px;font-size:22px">
+    <span title="姫路城" style="filter:drop-shadow(0 0 3px #c0001a)">🏯</span>
+    <span title="カメラ" style="filter:drop-shadow(0 0 3px #c0001a)">🎥</span>
+    <span title="マイク" style="filter:drop-shadow(0 0 3px #c0001a)">🎤</span>
+    <span title="ラーメン" style="filter:drop-shadow(0 0 3px #c0001a)">🍜</span>
+    <span title="台本" style="filter:drop-shadow(0 0 3px #c0001a)">📋</span>
+  </div>
+  <div class="header-title">&#127927; ぶらばん。 <span class="blink">&#9646;</span></div>
+  <div class="header-sub">ぶらばん。制作 スケジュール管理</div>
+  <button onclick="cloudLoad()" style="font-family:'DotGothic16',monospace;font-size:.62rem;background:rgba(192,0,26,.15);border:1px solid var(--bd);color:var(--bd);padding:3px 10px;cursor:pointer;margin-top:4px;margin-bottom:2px">↓ 最新データを取得</button>
+  <div id="sync-status" style="font-size:.62rem;margin-top:4px;color:var(--muted);min-height:14px"></div>
+</div>
+<div class="tab-nav">
+  <div class="tab-btn active" id="tabn-zazumi" onclick="switchTab('zazumi')"><span class="ti">📋</span>スケジュール</div>
+  <div class="tab-btn" id="tabn-cal" onclick="switchTab('cal')"><span class="ti">🏯</span>年間</div>
+  <div class="tab-btn" id="tabn-nare" onclick="switchTab('nare')"><span class="ti">🎤</span>ナレ</div>
+  <div class="tab-btn" id="tabn-vtrmaster" onclick="switchTab('vtrmaster')"><span class="ti">🎥</span>VTR管理</div>
+</div>
+<div id="tab-zazumi" class="tab-content active">
+  <div class="week-bar">
+    <span style="font-size:.68rem;color:var(--muted);white-space:nowrap">&#128197;</span>
+    <select class="pix-select" id="quarter-select" onchange="onQuarterChange()">
+      <option value="all">すべての期間</option>
+      <option value="2026-Q1">2026-1Q（4月〜6月）</option>
+      <option value="2026-Q2">2026-2Q（7月〜9月）</option>
+      <option value="2026-Q3">2026-3Q（10月〜12月）</option>
+      <option value="2026-Q4">2026-4Q（1月〜3月）</option>
+    </select>
+    <button class="rpg-btn sm" onclick="openModal('week-modal')">＋週追加</button>
+  </div>
+  <div class="pbox">
+    <div class="row-btw"><div class="sec-title" style="margin-bottom:0">&#128203; スケジュール一覧</div><button class="rpg-btn sm green" onclick="openVtrModal()">＋ スケジュール追加</button></div>
+    <div class="divider"></div>
+    <div id="vtr-list"></div>
+  </div>
+</div>
+<div id="tab-cal" class="tab-content">
+  <div class="pbox" style="padding:12px">
+    <div class="cal-year-nav">
+      <button class="rpg-btn sm gray" onclick="changeCalYear(-1)">&#9664;</button>
+      <div class="cal-year-lbl" id="cal-year-lbl"></div>
+      <button class="rpg-btn sm gray" onclick="changeCalYear(1)">&#9654;</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <div style="font-size:.65rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap">
+        <span><span style="color:var(--bd)">&#9632;</span> &#127909;収録日</span>
+        <span><span style="color:var(--green)">&#9632;</span> &#128250;放送中</span>
+      </div>
+      <button class="rpg-btn sm green" onclick="openOAModal()">＋ 放送予定を登録</button>
+    </div>
+    <div id="oa-list-mini"></div>
+  </div>
+  <div id="cal-months"></div>
+</div>
+<!-- ナレーションタブ -->
+<div id="tab-nare" class="tab-content">
+  <div class="pbox">
+    <div class="row-btw">
+      <div class="sec-title" style="margin-bottom:0">ナレーション収録</div>
+      <button class="rpg-btn sm green" onclick="openNareModal()">＋ 日程追加</button>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px">収録日ごとに収録する企画を管理します</div>
+    <div id="nare-list"></div>
+  </div>
+</div>
+
+<div id="tab-vtrmaster" class="tab-content">
+  <div class="pbox">
+    <div class="row-btw"><div class="sec-title" style="margin-bottom:0">&#127908; 出演者マスター</div><button class="rpg-btn sm green" onclick="openModal('cast-modal')">＋ 登録</button></div>
+    <div class="divider"></div>
+    <div id="castmaster-list"></div>
+  </div>
+  <div class="pbox">
+    <div class="row-btw"><div class="sec-title" style="margin-bottom:0">&#127916; VTRタイトル候補</div><button class="rpg-btn sm green" onclick="openModal('vtrm-modal')">＋ 登録</button></div>
+    <div class="divider"></div>
+    <div id="vtrmaster-list"></div>
+  </div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-btn active" id="nav-zazumi" onclick="switchTab('zazumi')"><span class="ni">📋</span>スケジュール</div>
+  <div class="nav-btn" id="nav-cal" onclick="switchTab('cal')"><span class="ni">🏯</span>年間</div>
+  <div class="nav-btn" id="nav-nare" onclick="switchTab('nare')"><span class="ni">🎤</span>ナレ</div>
+  <div class="nav-btn" id="nav-vtrmaster" onclick="switchTab('vtrmaster')"><span class="ni">🎥</span>VTR管理</div>
+</div>
+<div class="modal-bg" id="oa-modal"><div class="modal">
+  <div class="modal-title" id="oa-modal-title">&#128250; 放送予定を登録</div>
+  <div class="form-row"><div class="form-label">収録週を選択<span>*</span></div><select class="pix-input pix-select" id="oa-week-sel" onchange="onOAWeekChange()"></select></div>
+  <div class="form-row"><div class="form-label">OA開始日（土曜日）<span>*</span></div><input class="pix-input" type="date" id="oa-start" onchange="showOAPreview()"><div id="oa-end-preview" style="display:none;font-size:.68rem;color:var(--green);margin-top:4px;padding:3px 8px;background:#0a0a1a;border:1px solid var(--bd2)"></div></div>
+  <div id="oa-preview" style="display:none;font-size:.7rem;background:#0a0a1a;border:1px solid var(--bd2);padding:8px;margin-bottom:4px;color:var(--green);line-height:1.7"></div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('oa-modal')">キャンセル</button><button class="rpg-btn sm green" id="oa-save-btn" onclick="saveOA()">登録</button></div>
+</div></div>
+<div class="modal-bg" id="week-modal"><div class="modal">
+  <div class="modal-title">&#128197; 週を追加</div>
+  <div class="form-row"><div class="form-label">週の名前<span>*</span></div><input class="pix-input" id="w-name" placeholder="例：4月8日収録週"></div>
+  <div class="form-row"><div class="form-label">放送開始日（土曜日）</div><input class="pix-input" type="date" id="w-broadcast"></div>
+  <div class="form-row"><div class="form-label">収録日（水曜日）</div><input class="pix-input" type="date" id="w-shooting"></div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('week-modal')">キャンセル</button><button class="rpg-btn sm" onclick="addWeek()">追加</button></div>
+</div></div>
+<div class="modal-bg" id="vtr-modal"><div class="modal">
+  <div class="modal-title" id="vtr-modal-title">&#128203; スケジュール追加</div>
+  <div class="form-row"><div class="form-label">&#9312; 月を選択<span>*</span></div><select class="pix-input pix-select" id="v-month-sel" onchange="onMonthSelect()"><option value="">月を選んでください</option></select></div>
+  <div class="form-row" id="v-wed-row" style="display:none"><div class="form-label">&#9313; 収録週（水曜日）<span>*</span></div><select class="pix-input pix-select" id="v-week" onchange="onWedSelect()"><option value="">水曜日を選んでください</option></select></div>
+  <div id="v-week-preview" style="display:none;font-size:.7rem;background:#0a0a1a;border:1px solid var(--bd2);padding:8px;margin-bottom:12px;color:var(--green);line-height:1.7"></div>
+  <div class="form-row"><div class="form-label">VTR名・企画名<span>*</span></div><select class="pix-input pix-select" id="v-name-sel" onchange="onVtrNameSelect()"><option value="">── 候補から選ぶ ──</option></select><input class="pix-input" id="v-name" placeholder="または直接入力" style="margin-top:6px"></div>
+  <div class="form-row" style="margin-top:-6px"><button class="rpg-btn sm" style="border-color:var(--blue);color:var(--blue);background:rgba(79,195,247,.1);box-shadow:3px 3px 0 #1a3a4a" onclick="addVtrRow()">＋ VTRを追加（複数本撮り）</button></div>
+  <div id="v-extra-vtrs"></div>
+  <div class="form-row"><div class="form-label">&#127916; ディレクター</div><div class="select-with-other"><select class="pix-input pix-select" id="v-dir" onchange="onOtherChange('v-dir','v-dir-other')"><option value="">未定</option><option value="山口">山口</option><option value="大西">大西</option><option value="畠岡">畠岡</option><option value="藤本">藤本</option><option value="高岡蒼">高岡蒼</option><option value="__other__">その他（記入）</option></select><input class="pix-input" id="v-dir-other" placeholder="名前を入力" style="display:none"></div></div>
+  <div class="form-row"><div class="form-label">&#127909; Aカメ</div><div class="select-with-other"><select class="pix-input pix-select" id="v-acam" onchange="onOtherChange('v-acam','v-acam-other')"><option value="">未定</option><option value="山口">山口</option><option value="大西">大西</option><option value="畠岡">畠岡</option><option value="藤本">藤本</option><option value="高岡蒼">高岡蒼</option><option value="石本">石本</option><option value="土田">土田</option><option value="__other__">その他（記入）</option></select><input class="pix-input" id="v-acam-other" placeholder="名前を入力" style="display:none"></div></div>
+  <div class="form-row"><div class="form-label">&#128247; Bカメ</div><div class="select-with-other"><select class="pix-input pix-select" id="v-bcam" onchange="onOtherChange('v-bcam','v-bcam-other')"><option value="">なし／未定</option><option value="石本">石本</option><option value="土田">土田</option><option value="__other__">その他（記入）</option></select><input class="pix-input" id="v-bcam-other" placeholder="名前を入力" style="display:none"></div></div>
+  <div class="form-row"><div class="form-label">&#127908; 音声</div><div class="select-with-other"><select class="pix-input pix-select" id="v-sound" onchange="onOtherChange('v-sound','v-sound-other')"><option value="">未定</option><option value="鶴石">鶴石</option><option value="__other__">その他（記入）</option></select><input class="pix-input" id="v-sound-other" placeholder="名前を入力" style="display:none"></div></div>
+  <div class="form-row"><button class="rpg-btn sm gray" type="button" onclick="toggleCastSection()" id="v-cast-toggle-btn">出演者を選択</button><div id="v-cast-section" style="display:none;margin-top:10px"><div id="v-cast-checks" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div><div style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="v-cast-other-chk" onchange="onCastOtherChk()"><label for="v-cast-other-chk" style="font-size:.78rem;color:var(--muted)">その他（記入）</label></div><input class="pix-input" id="v-cast-other" placeholder="ゲスト名など" style="display:none;margin-top:6px"></div></div>
+  <div class="form-row"><div class="form-label">メモ</div><input class="pix-input" id="v-memo" placeholder="例：ロケ弁あり、集合9時など"></div>
+  <div class="form-row">
+    <div class="form-label">OA開始日（土曜日）</div>
+    <input class="pix-input" type="date" id="v-oa-start" onchange="showVtrOAPreview()">
+    <div id="v-oa-preview" style="display:none;font-size:.68rem;color:var(--green);margin-top:6px;padding:4px 8px;background:#0a0a1a;border:1px solid var(--bd2)"></div>
+  </div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('vtr-modal')">キャンセル</button><button class="rpg-btn sm" id="vtr-save-btn" onclick="saveVtr()">追加</button></div>
+</div></div>
+<div class="modal-bg" id="share-modal"><div class="modal">
+  <div class="modal-title">&#128228; LINE共有テキスト</div>
+  <div class="share-area"><div class="share-text" id="share-text"></div></div>
+  <div style="font-size:.7rem;color:var(--muted);margin-top:8px">&#8593; コピーしてLINEに貼り付けてください</div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('share-modal')">閉じる</button><button class="rpg-btn sm green" onclick="copyShare()">&#128203; コピー</button></div>
+</div></div>
+<!-- ナレーション追加モーダル -->
+<div class="modal-bg" id="nare-modal">
+  <div class="modal">
+    <div class="modal-title" id="nare-modal-title">ナレーション収録を追加</div>
+    <div class="form-row">
+      <div class="form-label">収録日<span>*</span></div>
+      <input class="pix-input" type="date" id="nare-date">
+    </div>
+    <div class="form-row">
+      <div class="form-label">開始時刻</div>
+      <input class="pix-input" type="time" id="nare-time">
+    </div>
+    <div class="form-row">
+      <div class="form-label">収録する企画（複数選択可）<span>*</span></div>
+      <div id="nare-vtr-checks" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;background:#0a0a1a;border:1px solid var(--bd2);padding:8px"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">メモ</div>
+      <input class="pix-input" id="nare-memo" placeholder="例：スタジオA、ナレーター名など">
+    </div>
+    <div class="modal-btns">
+      <button class="rpg-btn sm gray" onclick="closeModal('nare-modal')">キャンセル</button>
+      <button class="rpg-btn sm" id="nare-save-btn" onclick="saveNare()">追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cast-modal"><div class="modal">
+  <div class="modal-title">&#127908; 出演者を登録</div>
+  <div class="form-row"><div class="form-label">名前<span>*</span></div><input class="pix-input" id="cm-name" placeholder="例：田中一朗"></div>
+  <div class="form-row"><div class="form-label">肩書き・メモ</div><input class="pix-input" id="cm-memo" placeholder="例：MC、レポーター など"></div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('cast-modal')">キャンセル</button><button class="rpg-btn sm" onclick="addCastMaster()">登録</button></div>
+</div></div>
+<div class="modal-bg" id="vtrm-modal"><div class="modal">
+  <div class="modal-title">&#127916; VTRタイトル登録</div>
+  <div class="form-row"><div class="form-label">VTRタイトル<span>*</span></div><input class="pix-input" id="vm-title" placeholder="例：密着！春の新作グルメ"></div>
+  <div class="form-row"><div class="form-label">ジャンル・メモ</div><input class="pix-input" id="vm-memo" placeholder="例：ロケ、スタジオ など"></div>
+  <div class="modal-btns"><button class="rpg-btn sm gray" onclick="closeModal('vtrm-modal')">キャンセル</button><button class="rpg-btn sm" onclick="addVtrMaster()">登録</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+var PRESET_DATA = {"weeks": [{"id": 1, "name": "4月1日収録週", "broadcast": "2026-04-04", "shooting": "2026-04-01"}, {"id": 2, "name": "4月8日収録週", "broadcast": "2026-04-11", "shooting": "2026-04-08"}, {"id": 3, "name": "4月15日収録週", "broadcast": "2026-04-18", "shooting": "2026-04-15"}, {"id": 4, "name": "4月22日収録週", "broadcast": "2026-04-25", "shooting": "2026-04-22"}, {"id": 5, "name": "4月29日収録週", "broadcast": "2026-05-02", "shooting": "2026-04-29"}, {"id": 6, "name": "5月6日収録週", "broadcast": "2026-05-09", "shooting": "2026-05-06"}, {"id": 7, "name": "5月13日収録週", "broadcast": "2026-05-16", "shooting": "2026-05-13"}, {"id": 8, "name": "5月20日収録週", "broadcast": "2026-05-23", "shooting": "2026-05-20"}, {"id": 9, "name": "5月27日収録週", "broadcast": "2026-05-30", "shooting": "2026-05-27"}, {"id": 10, "name": "6月3日収録週", "broadcast": "2026-06-06", "shooting": "2026-06-03"}, {"id": 11, "name": "6月10日収録週", "broadcast": "2026-06-13", "shooting": "2026-06-10"}, {"id": 12, "name": "6月17日収録週", "broadcast": "2026-06-20", "shooting": "2026-06-17"}, {"id": 13, "name": "6月24日収録週", "broadcast": "2026-06-27", "shooting": "2026-06-24"}, {"id": 14, "name": "7月1日収録週", "broadcast": "2026-07-04", "shooting": "2026-07-01"}, {"id": 15, "name": "7月8日収録週", "broadcast": "2026-07-11", "shooting": "2026-07-08"}, {"id": 16, "name": "7月15日収録週", "broadcast": "2026-07-18", "shooting": "2026-07-15"}, {"id": 17, "name": "7月22日収録週", "broadcast": "2026-07-25", "shooting": "2026-07-22"}, {"id": 18, "name": "7月29日収録週", "broadcast": "2026-08-01", "shooting": "2026-07-29"}, {"id": 19, "name": "8月5日収録週", "broadcast": "2026-08-08", "shooting": "2026-08-05"}, {"id": 20, "name": "8月12日収録週", "broadcast": "2026-08-15", "shooting": "2026-08-12"}, {"id": 21, "name": "8月19日収録週", "broadcast": "2026-08-22", "shooting": "2026-08-19"}, {"id": 22, "name": "8月26日収録週", "broadcast": "2026-08-29", "shooting": "2026-08-26"}, {"id": 23, "name": "9月2日収録週", "broadcast": "2026-09-05", "shooting": "2026-09-02"}, {"id": 24, "name": "9月9日収録週", "broadcast": "2026-09-12", "shooting": "2026-09-09"}, {"id": 25, "name": "9月16日収録週", "broadcast": "2026-09-19", "shooting": "2026-09-16"}, {"id": 26, "name": "9月23日収録週", "broadcast": "2026-09-26", "shooting": "2026-09-23"}, {"id": 27, "name": "9月30日収録週", "broadcast": "2026-10-03", "shooting": "2026-09-30"}, {"id": 28, "name": "10月7日収録週", "broadcast": "2026-10-10", "shooting": "2026-10-07"}, {"id": 29, "name": "10月14日収録週", "broadcast": "2026-10-17", "shooting": "2026-10-14"}, {"id": 30, "name": "10月21日収録週", "broadcast": "2026-10-24", "shooting": "2026-10-21"}, {"id": 31, "name": "10月28日収録週", "broadcast": "2026-10-31", "shooting": "2026-10-28"}, {"id": 32, "name": "11月4日収録週", "broadcast": "2026-11-07", "shooting": "2026-11-04"}, {"id": 33, "name": "11月11日収録週", "broadcast": "2026-11-14", "shooting": "2026-11-11"}, {"id": 34, "name": "11月18日収録週", "broadcast": "2026-11-21", "shooting": "2026-11-18"}, {"id": 35, "name": "11月25日収録週", "broadcast": "2026-11-28", "shooting": "2026-11-25"}, {"id": 36, "name": "12月2日収録週", "broadcast": "2026-12-05", "shooting": "2026-12-02"}, {"id": 37, "name": "12月9日収録週", "broadcast": "2026-12-12", "shooting": "2026-12-09"}, {"id": 38, "name": "12月16日収録週", "broadcast": "2026-12-19", "shooting": "2026-12-16"}, {"id": 39, "name": "12月23日収録週", "broadcast": "2026-12-26", "shooting": "2026-12-23"}, {"id": 40, "name": "12月30日収録週", "broadcast": "2027-01-02", "shooting": "2026-12-30"}, {"id": 41, "name": "1月6日収録週", "broadcast": "2027-01-09", "shooting": "2027-01-06"}, {"id": 42, "name": "1月13日収録週", "broadcast": "2027-01-16", "shooting": "2027-01-13"}, {"id": 43, "name": "1月20日収録週", "broadcast": "2027-01-23", "shooting": "2027-01-20"}, {"id": 44, "name": "1月27日収録週", "broadcast": "2027-01-30", "shooting": "2027-01-27"}, {"id": 45, "name": "2月3日収録週", "broadcast": "2027-02-06", "shooting": "2027-02-03"}, {"id": 46, "name": "2月10日収録週", "broadcast": "2027-02-13", "shooting": "2027-02-10"}, {"id": 47, "name": "2月17日収録週", "broadcast": "2027-02-20", "shooting": "2027-02-17"}, {"id": 48, "name": "2月24日収録週", "broadcast": "2027-02-27", "shooting": "2027-02-24"}, {"id": 49, "name": "3月3日収録週", "broadcast": "2027-03-06", "shooting": "2027-03-03"}, {"id": 50, "name": "3月10日収録週", "broadcast": "2027-03-13", "shooting": "2027-03-10"}, {"id": 51, "name": "3月17日収録週", "broadcast": "2027-03-20", "shooting": "2027-03-17"}, {"id": 52, "name": "3月24日収録週", "broadcast": "2027-03-27", "shooting": "2027-03-24"}, {"id": 53, "name": "3月31日収録週", "broadcast": "2027-04-03", "shooting": "2027-03-31"}], "vtrs": [{"id": 1, "weekId": 1, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 2, "weekId": 2, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 3, "weekId": 3, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 4, "weekId": 4, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 5, "weekId": 5, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 6, "weekId": 6, "name": "", "dir": "山口", "acam": "大西", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 7, "weekId": 7, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 8, "weekId": 8, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 9, "weekId": 9, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 10, "weekId": 10, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 11, "weekId": 11, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 12, "weekId": 12, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 13, "weekId": 13, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 14, "weekId": 14, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 15, "weekId": 15, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 16, "weekId": 16, "name": "", "dir": "山口", "acam": "大西", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 17, "weekId": 17, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 18, "weekId": 18, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 19, "weekId": 19, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 20, "weekId": 20, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 21, "weekId": 21, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 22, "weekId": 22, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 23, "weekId": 23, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 24, "weekId": 24, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 25, "weekId": 25, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 26, "weekId": 26, "name": "", "dir": "山口", "acam": "大西", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 27, "weekId": 27, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 28, "weekId": 28, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 29, "weekId": 29, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 30, "weekId": 30, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 31, "weekId": 31, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 32, "weekId": 32, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 33, "weekId": 33, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 34, "weekId": 34, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 35, "weekId": 35, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 36, "weekId": 36, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 37, "weekId": 37, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 38, "weekId": 38, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 39, "weekId": 39, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 40, "weekId": 40, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 41, "weekId": 41, "name": "", "dir": "山口", "acam": "大西", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 42, "weekId": 42, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 43, "weekId": 43, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 44, "weekId": 44, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 45, "weekId": 45, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 46, "weekId": 46, "name": "", "dir": "山口", "acam": "大西", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 47, "weekId": 47, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 48, "weekId": 48, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "土田", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 49, "weekId": 49, "name": "", "dir": "藤本", "acam": "高岡蒼", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 50, "weekId": 50, "name": "", "dir": "高岡蒼", "acam": "山口", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 51, "weekId": 51, "name": "", "dir": "山口", "acam": "大西", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 52, "weekId": 52, "name": "", "dir": "大西", "acam": "畠岡", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}, {"id": 53, "weekId": 53, "name": "", "dir": "畠岡", "acam": "藤本", "bcam": "石本", "sound": "鶴石", "memo": "", "cast": [], "castOther": ""}], "calStartYear": 2026, "vtrMaster": [], "castMaster": [], "oaSchedules": [], "nareSchedules": []};
+// ===== STATE =====
+// ===== JSONBin クラウド同期 =====
+var JSONBIN_KEY='$2a$10$JwS9EWLhYIDCwwwaezMCS.V68mEaQuvrhdGoYtCKO7WdzM.Lkg8bm';
+var JSONBIN_BIN_ID=localStorage.getItem('buraban_bin_id')||null;
+var syncTimer=null;
+var isSyncing=false;
+
+function showSyncStatus(msg,color){var el=document.getElementById('sync-status');if(el){el.textContent=msg;el.style.color=color||'var(--muted)';}}
+
+function loadData(){
+  try{
+    var s=localStorage.getItem('buraban1');
+    var d=s?JSON.parse(s):JSON.parse(JSON.stringify(PRESET_DATA));
+    if(!d.vtrMaster)d.vtrMaster=[];
+    if(!d.castMaster||d.castMaster.length===0)d.castMaster=JSON.parse(JSON.stringify(PRESET_DATA.castMaster));
+    if(!d.oaSchedules)d.oaSchedules=[];
+    if(!d.nareSchedules)d.nareSchedules=[];
+    return d;
+  }catch(e){return JSON.parse(JSON.stringify(PRESET_DATA));}
+}
+
+function saveData(){
+  try{localStorage.setItem('buraban1',JSON.stringify(D));}catch(e){}
+  if(syncTimer)clearTimeout(syncTimer);
+  syncTimer=setTimeout(function(){cloudSave();},800);
+}
+
+function cloudSave(){
+  if(isSyncing)return;
+  isSyncing=true;
+  showSyncStatus('同期中...','var(--yellow)');
+  var body=JSON.stringify({data:D});
+  if(JSONBIN_BIN_ID){
+    fetch('https://api.jsonbin.io/v3/b/'+JSONBIN_BIN_ID,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body:body
+    }).then(function(r){return r.json();}).then(function(){
+      isSyncing=false;
+      showSyncStatus('✓ 同期済み','var(--bd)');
+      setTimeout(function(){showSyncStatus('');},2000);
+    }).catch(function(){isSyncing=false;showSyncStatus('同期失敗','var(--red)');});
+  }else{
+    fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY,'X-Bin-Name':'buraban-data','X-Bin-Private':'true'},
+      body:body
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.metadata&&res.metadata.id){
+        JSONBIN_BIN_ID=res.metadata.id;
+        localStorage.setItem('buraban_bin_id',JSONBIN_BIN_ID);
+        showSyncStatus('✓ クラウド保存完了！','var(--bd)');
+        setTimeout(function(){showSyncStatus('');},3000);
+      }
+      isSyncing=false;
+    }).catch(function(){isSyncing=false;showSyncStatus('同期失敗','var(--red)');});
+  }
+}
+
+function cloudLoad(){
+  if(!JSONBIN_BIN_ID){showSyncStatus('初回: データを入力してください','var(--muted)');return;}
+  showSyncStatus('読込中...','var(--yellow)');
+  fetch('https://api.jsonbin.io/v3/b/'+JSONBIN_BIN_ID+'/latest',{
+    headers:{'X-Master-Key':JSONBIN_KEY}
+  }).then(function(r){return r.json();}).then(function(res){
+    if(res.record&&res.record.data){
+      var d=res.record.data;
+      if(!d.vtrMaster)d.vtrMaster=[];
+      if(!d.castMaster||d.castMaster.length===0)d.castMaster=JSON.parse(JSON.stringify(PRESET_DATA.castMaster));
+      if(!d.oaSchedules)d.oaSchedules=[];
+      if(!d.nareSchedules)d.nareSchedules=[];
+      D=d;
+      localStorage.setItem('buraban1',JSON.stringify(D));
+      render();
+      showSyncStatus('✓ 最新データ取得','var(--bd)');
+      setTimeout(function(){showSyncStatus('');},2000);
+    }
+  }).catch(function(){showSyncStatus('オフライン','var(--muted)');});
+}
+var D=loadData();
+var currentQuarter='all';
+var editingVtrId=null;
+var editingOAId=null;
+var extraVtrCount=0;
+var calYear=D.calStartYear||2026;
+var nextId={week:100,vtr:100,vm:10,cm:10,oa:10,nare:10};
+(function(){D.weeks.forEach(function(w){if(w.id>=nextId.week)nextId.week=w.id+1;});D.vtrs.forEach(function(v){if(v.id>=nextId.vtr)nextId.vtr=v.id+1;});if(D.vtrMaster)D.vtrMaster.forEach(function(m){if(m.id>=nextId.vm)nextId.vm=m.id+1;});if(D.castMaster)D.castMaster.forEach(function(m){if(m.id>=nextId.cm)nextId.cm=m.id+1;});if(D.oaSchedules)D.oaSchedules.forEach(function(o){if(o.id>=nextId.oa)nextId.oa=o.id+1;});
+  if(D.nareSchedules)D.nareSchedules.forEach(function(n){if(n.id>=nextId.nare)nextId.nare=n.id+1;});})();
+var QUARTERS={'2026-Q1':{label:'2026-1Q（4月〜6月）',months:[4,5,6],year:2026},'2026-Q2':{label:'2026-2Q（7月〜9月）',months:[7,8,9],year:2026},'2026-Q3':{label:'2026-3Q（10月〜12月）',months:[10,11,12],year:2026},'2026-Q4':{label:'2026-4Q（1月〜3月）',months:[1,2,3],year:2027}};
+
+function switchTab(n){['zazumi','cal','nare','vtrmaster'].forEach(function(t){document.getElementById('tab-'+t).classList.toggle('active',t===n);document.getElementById('tabn-'+t).classList.toggle('active',t===n);var nb=document.getElementById('nav-'+t);if(nb)nb.classList.toggle('active',t===n);});if(n==='cal')renderCalendar();if(n==='nare')renderNareList();}
+function render(){renderVtrList();renderVtrMaster();renderCastMaster();fillVtrNameSelect();fillCastChecks();}
+function onQuarterChange(){currentQuarter=document.getElementById('quarter-select').value;renderVtrList();}
+function getWeeksForQ(qKey){if(qKey==='all')return D.weeks;var q=QUARTERS[qKey];if(!q)return D.weeks;return D.weeks.filter(function(w){var ds=w.shooting||w.broadcast||'';if(!ds)return false;var d=new Date(ds+'T00:00:00');return d.getFullYear()===q.year&&q.months.indexOf(d.getMonth()+1)!==-1;});}
+
+function renderVtrList(){
+  var container=document.getElementById('vtr-list');
+  var fwIds={};getWeeksForQ(currentQuarter).forEach(function(w){fwIds[w.id]=true;});
+  var vtrs=D.vtrs.filter(function(v){return fwIds[v.weekId];});
+  if(vtrs.length===0){container.innerHTML='<div class="empty-msg">この期間にスケジュールがありません。</div>';return;}
+  var grouped={};vtrs.forEach(function(v){var k=String(v.weekId);if(!grouped[k])grouped[k]=[];grouped[k].push(v);});
+  var weekOrder=Object.keys(grouped);
+  weekOrder.sort(function(a,b){var wa=getWeek(parseInt(a)),wb=getWeek(parseInt(b));var da=wa?(wa.shooting||wa.broadcast||''):'';var db=wb?(wb.shooting||wb.broadcast||''):'';return da<db?-1:1;});
+  var html='';
+  if(currentQuarter==='all'){
+    ['2026-Q1','2026-Q2','2026-Q3','2026-Q4'].forEach(function(qKey){
+      var q=QUARTERS[qKey];var qWids=[];
+      getWeeksForQ('all').forEach(function(w){var ds=w.shooting||w.broadcast||'';if(!ds)return;var d=new Date(ds+'T00:00:00');if(d.getFullYear()===q.year&&q.months.indexOf(d.getMonth()+1)!==-1)qWids.push(String(w.id));});
+      var qOrder=weekOrder.filter(function(wid){return qWids.indexOf(wid)!==-1;});
+      if(qOrder.length===0)return;
+      html+='<div style="margin:10px 0 8px"><div style="font-size:.72rem;color:var(--yellow);background:rgba(245,166,35,.1);border:2px solid var(--yellow);padding:6px 10px;margin-bottom:8px">&#128197; '+q.label+'</div>';
+      qOrder.forEach(function(wid){var week=getWeek(parseInt(wid));var oa4w=D.oaSchedules?D.oaSchedules.find(function(o){return week&&o.weekId===week.id;}):null;var wn=week?week.name+(oa4w?'（'+fmtS(oa4w.start)+'放送〜）':''):'週未設定';html+='<div style="margin:4px 0 4px"><span class="badge-week">'+wn+'</span></div>';grouped[wid].forEach(function(v){html+=vtrCardHTML(v);});});
+      html+='</div>';
+    });
+  }else{
+    var q2=QUARTERS[currentQuarter];
+    html+='<div style="font-size:.72rem;color:var(--yellow);background:rgba(245,166,35,.1);border:2px solid var(--yellow);padding:6px 10px;margin-bottom:12px">&#128197; '+q2.label+'</div>';
+    weekOrder.forEach(function(wid){var week=getWeek(parseInt(wid));var oa4w=D.oaSchedules?D.oaSchedules.find(function(o){return week&&o.weekId===week.id;}):null;var wn=week?week.name+(oa4w?'（'+fmtS(oa4w.start)+'放送〜）':''):'週未設定';html+='<div style="margin:4px 0 4px"><span class="badge-week">'+wn+'</span></div>';grouped[wid].forEach(function(v){html+=vtrCardHTML(v);});});
+  }
+  container.innerHTML=html;
+}
+
+function vtrCardHTML(v){
+  var week=getWeek(v.weekId);var wn=week?week.name:'';
+  var oaV=D.oaSchedules?D.oaSchedules.find(function(o){return o.weekId===v.weekId;}):null;  var nareV=[];if(D.nareSchedules){for(var ni2=0;ni2<D.nareSchedules.length;ni2++){if(D.nareSchedules[ni2].vtrIds&&D.nareSchedules[ni2].vtrIds.indexOf(v.id)!==-1)nareV.push(D.nareSchedules[ni2]);}}   var di=[];if(oaV)di.push('放送：'+fmtS(oaV.start)+'〜'+fmtS(oaV.end));else di.push('放送日：未定');if(week&&week.shooting)di.push('収録：'+fmtS(week.shooting));if(nareV.length>0){var ns2='';for(var ni4=0;ni4<nareV.length;ni4++){var ni4d=new Date(nareV[ni4].date+'T00:00:00');if(ns2)ns2+='、';ns2+=(ni4d.getMonth()+1)+'/'+ni4d.getDate()+(nareV[ni4].time?' '+nareV[ni4].time:'');}di.push('ナレ：'+ns2);}
+  return '<div class="vtr-card" id="vtr-'+v.id+'"><div class="vtr-header" onclick="toggleCard('+v.id+')">' +
+    '<div style="flex:1;min-width:0"><div class="vtr-name">&#127916; '+(v.name||'（タイトル未定）')+'</div><div class="vtr-week">'+wn+(di.length?' ／ '+di.join(' ／ '):'')+'</div></div>' +
+    '<div style="display:flex;gap:4px;flex-shrink:0;margin-left:6px">' +
+    '<button class="rpg-btn yellow sm" onclick="event.stopPropagation();shareVtr('+v.id+')">&#128228;</button>' +
+    '<button class="rpg-btn gray sm" onclick="event.stopPropagation();editVtr('+v.id+')">&#9999;</button>' +
+    '<button class="rpg-btn gray sm" onclick="event.stopPropagation();deleteVtr('+v.id+')">&#128465;</button>' +
+    '</div></div>' +
+    '<div class="vtr-body" id="vtr-body-'+v.id+'" style="display:none">' +
+    crewRow('&#127916; D',v.dir)+crewRow('&#127909; Aカメ',v.acam)+crewRow('&#128247; Bカメ',v.bcam)+crewRow('&#127908; 音声',v.sound)+crewRow('&#127908; 出演',buildCastStr(v))+
+    (v.memo?'<div class="vtr-memo">&#128221; '+v.memo+'</div>':'')+
+    '</div></div>';
+}
+function crewRow(label,val){return '<div class="crew-row"><div class="crew-label">'+label+'</div><div class="crew-value'+(val?'':' empty')+'">'+(val||'未定')+'</div></div>';}
+function toggleCard(id){var b=document.getElementById('vtr-body-'+id);if(b)b.style.display=b.style.display==='none'?'block':'none';}
+
+function addWeek(){var name=document.getElementById('w-name').value.trim();if(!name){showToast('⚠ 週の名前を入力してください');return;}var w={id:nextId.week++,name:name,broadcast:document.getElementById('w-broadcast').value,shooting:document.getElementById('w-shooting').value};D.weeks.push(w);saveData();render();closeModal('week-modal');document.getElementById('w-name').value='';document.getElementById('w-broadcast').value='';document.getElementById('w-shooting').value='';showToast('✅ '+name+' を追加しました');}
+
+function openVtrModal(){editingVtrId=null;document.getElementById('vtr-modal-title').textContent='&#128203; スケジュール追加';document.getElementById('vtr-save-btn').textContent='追加';clearVtrForm();fillMonthSel();fillVtrNameSelect();fillCastChecks();openModal('vtr-modal');}
+
+function fillMonthSel(){
+  var sel=document.getElementById('v-month-sel');var sy=D.calStartYear||2026;
+  var html='<option value="">月を選んでください</option>';
+  for(var mi=0;mi<12;mi++){var yr=mi<9?sy:sy+1;var mo=(mi+3)%12+1;html+='<option value="'+yr+'-'+('0'+mo).slice(-2)+'">'+yr+'年'+mo+'月</option>';}
+  sel.innerHTML=html;document.getElementById('v-wed-row').style.display='none';document.getElementById('v-week-preview').style.display='none';
+}
+function onMonthSelect(){
+  var val=document.getElementById('v-month-sel').value;
+  var wedRow=document.getElementById('v-wed-row'),preview=document.getElementById('v-week-preview');
+  if(!val){wedRow.style.display='none';preview.style.display='none';return;}
+  var p=val.split('-'),yr=parseInt(p[0]),mo=parseInt(p[1]);
+  var html='<option value="">水曜日を選んでください</option>';
+  var dim=new Date(yr,mo,0).getDate();
+  for(var d=1;d<=dim;d++){if(new Date(yr,mo-1,d).getDay()===3){var dStr=yr+'-'+('0'+mo).slice(-2)+'-'+('0'+d).slice(-2);var mw=null;D.weeks.forEach(function(w){if(w.shooting===dStr)mw=w;});var sat=new Date(yr,mo-1,d+3);var satStr=sat.getFullYear()+'-'+('0'+(sat.getMonth()+1)).slice(-2)+'-'+('0'+sat.getDate()).slice(-2);var label=mo+'/'+d+'（水）'+(mw?' → '+mw.name:' → '+mo+'月'+d+'日収録週（未登録）');html+='<option value="'+dStr+'" data-sat="'+satStr+'" data-matched="'+(mw?mw.id:'')+'">'+label+'</option>';}}
+  document.getElementById('v-week').innerHTML=html;wedRow.style.display='block';preview.style.display='none';
+}
+function onWedSelect(){
+  var sel=document.getElementById('v-week'),opt=sel.options[sel.selectedIndex],preview=document.getElementById('v-week-preview');
+  if(!opt||!opt.value){preview.style.display='none';return;}
+  var dStr=opt.value,mid=opt.getAttribute('data-matched');
+  var d=new Date(dStr+'T00:00:00');
+  var lines=['収録：'+(d.getMonth()+1)+'/'+d.getDate()+'（水）'];
+  // 放送日：OAスケジュール登録済みなら表示、なければ未定
+  var oaStart='';
+  if(mid){
+    var existW=getWeek(parseInt(mid));
+    if(existW&&D.oaSchedules){
+      var existOA=D.oaSchedules.find(function(o){return o.weekId===existW.id;});
+      if(existOA){
+        var oaSat=new Date(existOA.start+'T00:00:00');
+        var oaFri=new Date(existOA.end+'T00:00:00');
+        lines.push('放送：'+(oaSat.getMonth()+1)+'/'+oaSat.getDate()+'（土）〜'+(oaFri.getMonth()+1)+'/'+oaFri.getDate()+'（金）');
+        oaStart=existOA.start;
+      }else{lines.push('放送日：未定');}
+    }else{lines.push('放送日：未定');}
+    var w=getWeek(parseInt(mid));if(w)lines.push('週名：'+w.name);
+  }else{
+    lines.push('放送日：未定');
+    lines.push('週名：自動登録されます');
+  }
+  preview.innerHTML=lines.join('<br>');preview.style.display='block';
+  // OA入力欄に登録済み日をセット（なければ空）
+  var oaInp=document.getElementById('v-oa-start');
+  if(oaInp)oaInp.value=oaStart;
+  showVtrOAPreview();
+}
+function saveVtr(){
+  var sel=document.getElementById('v-week'),opt=sel.options[sel.selectedIndex],dStr=opt?opt.value:'';
+  if(!dStr){showToast('⚠ 収録週を選択してください');return;}
+  var name=document.getElementById('v-name').value.trim();if(!name){showToast('⚠ VTR名を入力してください');return;}
+  var mid=opt?opt.getAttribute('data-matched'):'';var weekId;
+  if(mid){weekId=parseInt(mid);}else{var dObj=new Date(dStr+'T00:00:00');var sat=new Date(dObj);sat.setDate(sat.getDate()+3);var satStr=sat.getFullYear()+'-'+('0'+(sat.getMonth()+1)).slice(-2)+'-'+('0'+sat.getDate()).slice(-2);var awn=(dObj.getMonth()+1)+'月'+dObj.getDate()+'日収録週';D.weeks.push({id:nextId.week++,name:awn,broadcast:satStr,shooting:dStr});weekId=D.weeks[D.weeks.length-1].id;}
+  var crew={dir:gfv('v-dir','v-dir-other'),acam:gfv('v-acam','v-acam-other'),bcam:gfv('v-bcam','v-bcam-other'),sound:gfv('v-sound','v-sound-other'),cast:getSelCast(),castOther:document.getElementById('v-cast-other-chk').checked?document.getElementById('v-cast-other').value.trim():'',memo:document.getElementById('v-memo').value.trim()};
+  if(editingVtrId){var v=Object.assign({id:editingVtrId,weekId:weekId,name:name},crew);for(var i=0;i<D.vtrs.length;i++){if(D.vtrs[i].id===editingVtrId){D.vtrs[i]=v;break;}}showToast('✅ スケジュールを更新しました');}
+  else{D.vtrs.push(Object.assign({id:nextId.vtr++,weekId:weekId,name:name},crew));var ex=getExtraVtrNames();ex.forEach(function(en){D.vtrs.push(Object.assign({id:nextId.vtr++,weekId:weekId,name:en},crew));});showToast('✅ '+(1+ex.length)+'本のスケジュールを追加しました');}
+  // OA日程を保存（開始日から終了日＝+6日を自動計算）
+  var oaSt = document.getElementById('v-oa-start').value;
+  if (oaSt) {
+    var satObj = new Date(oaSt + 'T00:00:00');
+    var friObj = new Date(satObj); friObj.setDate(friObj.getDate() + 6);
+    var oaEn = toDS(friObj.getFullYear(), friObj.getMonth()+1, friObj.getDate());
+    if (!D.oaSchedules) D.oaSchedules = [];
+    var existingOA = D.oaSchedules.find(function(o){ return o.weekId === weekId; });
+    if (existingOA) { existingOA.start = oaSt; existingOA.end = oaEn; }
+    else { D.oaSchedules.push({id: nextId.oa++, weekId: weekId, start: oaSt, end: oaEn}); }
+  }
+  clearExtraVtrs();saveData();render();closeModal('vtr-modal');
+}
+function editVtr(id){var v=getVtr(id);if(!v)return;editingVtrId=id;document.getElementById('vtr-modal-title').textContent='スケジュールを編集';document.getElementById('vtr-save-btn').textContent='保存';clearVtrForm();fillMonthSel();fillVtrNameSelect();fillCastChecks();var week=getWeek(v.weekId);if(week&&week.shooting){var d=new Date(week.shooting+'T00:00:00');document.getElementById('v-month-sel').value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);onMonthSelect();setTimeout(function(){var ws=document.getElementById('v-week');for(var i=0;i<ws.options.length;i++){if(ws.options[i].value===week.shooting){ws.selectedIndex=i;break;}}onWedSelect();},50);}document.getElementById('v-name').value=v.name;setSV('v-dir','v-dir-other',v.dir);setSV('v-acam','v-acam-other',v.acam);setSV('v-bcam','v-bcam-other',v.bcam);setSV('v-sound','v-sound-other',v.sound);document.getElementById('v-memo').value=v.memo||'';setTimeout(function(){setCastChecks(v.cast||[],v.castOther||'');},60);
+  // OA日程を復元
+  if(D.oaSchedules){var existOA=D.oaSchedules.find(function(o){return o.weekId===v.weekId;});if(existOA)setTimeout(function(){setVtrOASection(existOA.start);},80);}
+  openModal('vtr-modal');}
+function deleteVtr(id){var v=getVtr(id);if(!v)return;if(!confirm('「'+(v.name||'このスケジュール')+'」を削除しますか？'))return;D.vtrs=D.vtrs.filter(function(x){return x.id!==id;});saveData();render();showToast('&#128465; 削除しました');}
+
+function shareVtr(id){var v=getVtr(id);if(!v)return;var week=getWeek(v.weekId);var lines=['━━━━━━━━━━━━━━━','【'+(v.name||'タイトル未定')+'】','━━━━━━━━━━━━━━━'];if(week){lines.push('収録週：'+week.name);var oaS=D.oaSchedules?D.oaSchedules.find(function(o){return o.weekId===v.weekId;}):null;if(oaS)lines.push('放送：'+fmtS(oaS.start)+'（土）〜'+fmtS(oaS.end)+'（金）');else lines.push('放送日：未定');if(week.shooting)lines.push('収録：'+fmtS(week.shooting)+'（水）');}lines.push('');lines.push('【スケジュール】');lines.push('D：'+(v.dir||'未定'));lines.push('Aカメ：'+(v.acam||'未定'));lines.push('Bカメ：'+(v.bcam||'なし'));lines.push('音声：'+(v.sound||'未定'));var cs=buildCastStr(v);if(cs)lines.push('出演：'+cs);if(v.memo){lines.push('');lines.push('メモ：'+v.memo);}lines.push('━━━━━━━━━━━━━━━');document.getElementById('share-text').textContent=lines.join('\n');openModal('share-modal');}
+function copyShare(){var txt=document.getElementById('share-text').textContent;if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){showToast('✅ コピーしました！');closeModal('share-modal');});}else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ コピーしました！');closeModal('share-modal');}}
+
+// ===== CALENDAR =====
+function changeCalYear(dir){calYear+=dir;D.calStartYear=calYear;saveData();renderCalendar();}
+function renderCalendar(){
+  renderOAListMini();
+  document.getElementById('cal-year-lbl').textContent=calYear+'年4月〜'+(calYear+1)+'年3月';
+  var html='';
+  for(var mi=0;mi<12;mi++){var yr=mi<9?calYear:calYear+1;var mo=(mi+3)%12+1;html+=renderMonth(yr,mo);}
+  document.getElementById('cal-months').innerHTML=html;
+}
+function renderMonth(year,month){
+  var mnames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var today=new Date();
+  var firstDay=new Date(year,month-1,1).getDay();
+  var daysInMonth=new Date(year,month,0).getDate();
+  var recDays={};
+  for(var d=1;d<=daysInMonth;d++){if(new Date(year,month-1,d).getDay()===3){var dStr=toDS(year,month,d);var mw=null;D.weeks.forEach(function(w){if(w.shooting===dStr)mw=w;});recDays[d]={date:dStr,week:mw};}}
+  var airRanges=[];
+  if(D.oaSchedules){for(var oai=0;oai<D.oaSchedules.length;oai++){var oa=D.oaSchedules[oai];var as=new Date(oa.start+'T00:00:00'),ae=new Date(oa.end+'T00:00:00');var wk=getWeek(oa.weekId);var vv=D.vtrs.filter(function(v){return v.weekId===oa.weekId;});var vn=vv.length>0&&vv[0].name?vv[0].name:(wk?wk.name:'');airRanges.push({start:as,end:ae,vname:vn});}}
+  // ナレーション収録日（この月のもの）
+  var nareDays={};
+  if(D.nareSchedules){for(var nsi=0;nsi<D.nareSchedules.length;nsi++){var nsn=D.nareSchedules[nsi];var nd=new Date(nsn.date+'T00:00:00');if(nd.getFullYear()===year&&nd.getMonth()+1===month){nareDays[nd.getDate()]=nsn;}}}
+
+  // 仮編締切日（OA開始の前週火曜日 = OA開始日 - 4日）
+  var kakuDays={};
+  if(D.oaSchedules){for(var koi=0;koi<D.oaSchedules.length;koi++){var kooa=D.oaSchedules[koi];
+    var oaSat=new Date(kooa.start+'T00:00:00');
+    var tue=new Date(oaSat);
+    tue.setDate(tue.getDate()-4);
+    if(tue.getFullYear()===year&&tue.getMonth()+1===month){
+      var kowk=getWeek(kooa.weekId);
+      var kovname='';
+      for(var kovi=0;kovi<D.vtrs.length;kovi++){if(D.vtrs[kovi].weekId===kooa.weekId&&D.vtrs[kovi].name){kovname=D.vtrs[kovi].name;break;}}
+      if(!kovname&&kowk)kovname=kowk.name;
+      var tueDay=tue.getDate();
+      if(!kakuDays[tueDay])kakuDays[tueDay]=[];
+      kakuDays[tueDay].push(kovname);
+    }
+  }}
+  var cells=[];
+  for(var i=0;i<firstDay;i++)cells.push({empty:true});
+  for(var d2=1;d2<=daysInMonth;d2++){var dow=new Date(year,month-1,d2).getDay();var isTd=(d2===today.getDate()&&month===today.getMonth()+1&&year===today.getFullYear());cells.push({day:d2,dow:dow,isTd:isTd,isRec:!!recDays[d2],recWeek:recDays[d2]?recDays[d2].week:null,dStr:recDays[d2]?recDays[d2].date:''});}
+  var rem=cells.length%7;if(rem!==0){for(var j=0;j<7-rem;j++)cells.push({empty:true});}
+  var totalRows=cells.length/7;
+  var rc=Object.keys(recDays).length,regc=0;for(var k in recDays){if(recDays[k].week)regc++;}
+  var html='<div class="month-block"><div class="month-header"><div class="month-name">'+year+'年 '+mnames[month-1]+'</div><div class="month-stats">収録 '+rc+'回 ／ スケジュール '+regc+'件</div></div>';
+  var dh=['日','月','火','水','木','金','土'],dc=['var(--red)','var(--muted)','var(--muted)','var(--muted)','var(--muted)','var(--muted)','var(--blue)'];
+  html+='<div class="cal-grid">';for(var hi=0;hi<7;hi++)html+='<div class="cal-head" style="color:'+dc[hi]+'">'+dh[hi]+'</div>';html+='</div>';
+  for(var row=0;row<totalRows;row++){
+    var rc2=cells.slice(row*7,row*7+7);
+    var hasRec=rc2.some(function(cc){return !cc.empty&&cc.isRec;});
+    var hasNare=rc2.some(function(cc){return !cc.empty&&cc.day&&(nareDays[cc.day]||(kakuDays[cc.day]&&kakuDays[cc.day].length>0));});
+    var rowDays=rc2.filter(function(cc){return !cc.empty&&cc.day;});
+    var rowFirst=rowDays.length>0?new Date(year,month-1,rowDays[0].day):null;
+    var rowLast=rowDays.length>0?new Date(year,month-1,rowDays[rowDays.length-1].day):null;
+    var rowAirs=[];
+    if(rowFirst&&rowLast){
+      airRanges.forEach(function(ar){
+        var ms=new Date(year,month-1,1),me=new Date(year,month,0);
+        if(ar.end<ms||ar.start>me)return;
+        var bs=ar.start>ms?ar.start:ms,be=ar.end;
+        if(be<rowFirst||bs>rowLast)return;
+        var ss=bs>rowFirst?bs:rowFirst,se=be<rowLast?be:rowLast;
+        var sc=-1,ec=-1;
+        rc2.forEach(function(cc,ci){if(cc.empty||!cc.day)return;var cdt=new Date(year,month-1,cc.day);if(cdt.getTime()===ss.getTime())sc=ci;if(cdt.getTime()===se.getTime())ec=ci;});
+        if(sc<0){for(var ci2=0;ci2<7;ci2++){if(!rc2[ci2].empty&&rc2[ci2].day){sc=ci2;break;}}}
+        if(ec<0){for(var ci3=6;ci3>=0;ci3--){if(rc2[ci3]&&!rc2[ci3].empty&&rc2[ci3].day){ec=ci3;break;}}}
+        if(sc<0||ec<0)return;
+        rowAirs.push({sc:sc,ec:ec,vname:ar.vname,isFirst:ar.start.getTime()===ss.getTime()||ar.start<=rowFirst,isLast:ar.end.getTime()===se.getTime()||ar.end>=rowLast});
+      });
+    }
+    var hasAir=rowAirs.length>0;
+    var bb=hasRec||hasAir||hasNare?'none':'1px solid rgba(83,52,131,.2)';
+    // 日付行
+    html+='<div class="cal-grid">';
+    rc2.forEach(function(cell){if(cell.empty||!cell.day){html+='<div class="cal-cell ec" style="border-bottom:'+bb+'"></div>';return;}var nc=cell.isTd?'color:var(--bd);font-weight:bold':(cell.dow===0?'color:var(--red)':cell.dow===6?'color:var(--blue)':'color:var(--text)');var bg=cell.isTd?' tc':'';html+='<div class="cal-cell'+bg+'" style="border-bottom:'+bb+'"><div class="cal-day" style="'+nc+'">'+cell.day+'</div></div>';});
+    html+='</div>';
+    // 収録バッジ行
+    if(hasRec||hasNare){
+      var bbr=hasAir?'none':'1px solid rgba(83,52,131,.2)';
+      html+='<div class="cal-grid">';
+      rc2.forEach(function(cell){if(cell.empty||!cell.day){html+='<div class="cal-cell ec" style="min-height:16px;border-bottom:'+bbr+'"></div>';return;}var bg=cell.isTd?' tc':'';var nareD=nareDays[cell.day];var kakuD=kakuDays[cell.day];html+='<div class="cal-cell'+bg+'" style="min-height:16px;border-bottom:'+bbr+'">'+(cell.isRec?'<div class="ev-rec">'+(cell.recWeek?'&#127909; '+cell.recWeek.name:'<span style="cursor:pointer;opacity:.7" onclick="quickAddWeek(\''+cell.dStr+'\')">&#127909; +登録</span>')+'</div>':'')+(nareD?'<div style="background:rgba(232,193,112,.15);border-left:2px solid var(--yellow);font-size:.48rem;color:var(--yellow);padding:1px 2px">ナレ'+(nareD.time?' '+nareD.time:'')+'</div>':'')+(kakuD&&kakuD.length>0?'<div style="background:rgba(245,166,35,.15);border-left:2px solid var(--yellow);font-size:.44rem;color:var(--yellow);padding:1px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+kakuD.map(function(n){return n.length>4?n.slice(0,4)+'…':n;}).join('・')+'〆</div>':'')+'</div>';});
+      html+='</div>';
+    }
+    // 放送バー行
+    if(hasAir){
+      html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);position:relative;height:16px;border-bottom:1px solid rgba(83,52,131,.2)">';
+      rc2.forEach(function(cell){var bg=(cell.empty||!cell.day)?'rgba(0,0,0,.25)':cell.isTd?'rgba(233,69,96,.08)':'#0d0d2e';html+='<div style="background:'+bg+';border-right:1px solid rgba(83,52,131,.2);height:16px"></div>';});
+      rowAirs.forEach(function(bar){
+        var pl=(bar.sc/7*100).toFixed(2),pw=((bar.ec-bar.sc+1)/7*100).toFixed(2);
+        var bl=bar.isFirst?'2px solid var(--green)':'none',br=bar.isLast?'2px solid var(--green)':'none';
+        var rad=(bar.isFirst&&bar.isLast)?'3px':bar.isFirst?'3px 0 0 3px':bar.isLast?'0 3px 3px 0':'0';
+        html+='<div style="position:absolute;top:1px;bottom:1px;left:calc('+pl+'% + 1px);width:calc('+pw+'% - 2px);background:rgba(192,0,26,.18);border-top:2px solid var(--bd);border-bottom:2px solid var(--bd);border-left:'+bl+';border-right:'+br+';border-radius:'+rad+';display:flex;align-items:center;overflow:hidden">'+(bar.isFirst?'<span style="font-size:.44rem;color:var(--bd);padding:0 2px;white-space:nowrap">&#128250; '+bar.vname+'</span>':'')+'</div>';
+      });
+      html+='</div>';
+    }
+  }
+  // 週サマリー
+  var wtm=[];for(var dk in recDays){var rd=recDays[dk];if(rd.week)wtm.push({day:parseInt(dk),week:rd.week});else wtm.push({day:parseInt(dk),week:null,dStr:rd.date});}
+  wtm.sort(function(a,b){return a.day-b.day;});
+  if(wtm.length>0){
+    html+='<div style="padding:10px 12px;border-top:2px solid var(--bd2)"><div style="font-size:.6rem;color:var(--muted);margin-bottom:6px">&#128203; この月の収録週とスケジュール</div>';
+    wtm.forEach(function(item){
+      html+='<div class="week-row"><div class="week-row-label"><div class="wrl-name">'+(item.week?item.week.name:'未登録')+'</div><div class="wrl-date">&#127909; '+month+'/'+item.day+'（水）</div></div><div class="week-row-body">';
+      if(item.week){
+        var wv=D.vtrs.filter(function(v){return v.weekId===item.week.id;});
+        if(wv.length>0){wv.forEach(function(v,vi){if(vi>0)html+='<div style="border-top:1px dashed var(--bd2);margin:6px 0 4px"></div>';if(v.name)html+='<div class="vtr-title-mini">&#127916; '+v.name+'</div>';html+='<div class="crew-mini"><div class="crew-mini-row"><span class="crew-mini-lbl">&#127916; D</span><span class="crew-mini-val">'+(v.dir||'未定')+'</span></div><div class="crew-mini-row"><span class="crew-mini-lbl">&#127909; Aカメ</span><span class="crew-mini-val">'+(v.acam||'未定')+'</span></div><div class="crew-mini-row"><span class="crew-mini-lbl">&#128247; Bカメ</span><span class="crew-mini-val">'+(v.bcam||'なし')+'</span></div><div class="crew-mini-row"><span class="crew-mini-lbl">&#127908; 音声</span><span class="crew-mini-val">'+(v.sound||'未定')+'</span></div></div>';var cs=buildCastStr(v);html+='<div style="font-size:.68rem;color:var(--purple);margin-top:4px;padding-top:4px;border-top:1px dashed var(--bd2)">&#127908; 出演：'+(cs||'未登録')+'</div>';if(v.memo)html+='<div style="font-size:.65rem;color:var(--muted);margin-top:2px">&#128221; '+v.memo+'</div>';
+            var nareV2=[];
+            if(D.nareSchedules){for(var ni=0;ni<D.nareSchedules.length;ni++){if(D.nareSchedules[ni].vtrIds&&D.nareSchedules[ni].vtrIds.indexOf(v.id)!==-1)nareV2.push(D.nareSchedules[ni]);}}
+            if(nareV2.length>0){
+              var ns='';for(var ni3=0;ni3<nareV2.length;ni3++){var ni3d=new Date(nareV2[ni3].date+'T00:00:00');if(ns)ns+='、';ns+=(ni3d.getMonth()+1)+'/'+ni3d.getDate()+(nareV2[ni3].time?' '+nareV2[ni3].time:'');}
+              html+='<div style="font-size:.68rem;color:var(--blue);margin-top:4px;padding-top:4px;border-top:1px dashed var(--bd2)">ナレ収録：'+ns+'</div>';
+            }
+          });}
+        else html+='<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">スケジュール未登録</div>';
+        html+='<span class="week-add-btn" onclick="openVtrForWeek('+item.week.id+')">＋ スケジュール追加</span>';
+        var oafw=D.oaSchedules?D.oaSchedules.filter(function(o){return o.weekId===item.week.id;}):[]; 
+        if(oafw.length>0)oafw.forEach(function(oa){html+='<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><span style="font-size:.65rem;color:var(--green)">&#128250; '+fmtS(oa.start)+'〜'+fmtS(oa.end)+'</span><span class="week-add-btn" onclick="editOA('+oa.id+')">&#9999; 変更</span><span class="week-add-btn" style="color:var(--red)" onclick="deleteOA('+oa.id+')">&#10005;</span></div>';});
+        else html+='<div style="margin-top:4px"><span class="week-add-btn" onclick="openOAForWeek('+item.week.id+')">&#128250; 放送日程を設定</span></div>';
+      }else html+='<div style="font-size:.7rem;color:var(--muted)">週未登録</div><span class="week-add-btn" onclick="quickAddWeek(\''+item.dStr+'\')">＋ 週を登録</span>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';return html;
+}
+
+// ===== OA =====
+function renderOAListMini(){var el=document.getElementById('oa-list-mini');if(!el)return;if(!D.oaSchedules||D.oaSchedules.length===0){el.innerHTML='';return;}var sorted=D.oaSchedules.slice().sort(function(a,b){return a.start<b.start?-1:1;});var html='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';sorted.forEach(function(oa){var wk=getWeek(oa.weekId);var vv=D.vtrs.filter(function(v){return v.weekId===oa.weekId;});var vn=vv.length>0&&vv[0].name?vv[0].name:(wk?wk.name:'');html+='<div style="background:rgba(192,0,26,.12);border:1px solid var(--bd);padding:3px 8px;font-size:.62rem;color:var(--green);display:flex;align-items:center;gap:6px"><span>&#128250; '+fmtS(oa.start)+'〜'+fmtS(oa.end)+(vn?'（'+vn+'）':'')+'</span><span onclick="editOA('+oa.id+')" style="cursor:pointer;color:var(--muted)">&#9999;</span><span onclick="deleteOA('+oa.id+')" style="cursor:pointer;color:var(--muted)">&#10005;</span></div>';});html+='</div>';el.innerHTML=html;}
+function openOAModal(){editingOAId=null;document.getElementById('oa-modal-title').textContent='&#128250; 放送予定を登録';document.getElementById('oa-save-btn').textContent='登録';fillOAWeekSel();document.getElementById('oa-start').value='';document.getElementById('oa-preview').style.display='none';openModal('oa-modal');}
+function openOAForWeek(wid){openOAModal();setTimeout(function(){document.getElementById('oa-week-sel').value=wid;onOAWeekChange();},50);}
+function editOA(id){var oa=D.oaSchedules.find(function(o){return o.id===id;});if(!oa)return;editingOAId=id;document.getElementById('oa-modal-title').textContent='放送予定を編集';document.getElementById('oa-save-btn').textContent='保存';fillOAWeekSel();document.getElementById('oa-week-sel').value=oa.weekId;document.getElementById('oa-start').value=oa.start;showOAPreview();openModal('oa-modal');}
+function fillOAWeekSel(){var sel=document.getElementById('oa-week-sel');var sorted=D.weeks.slice().sort(function(a,b){return(a.shooting||'')<(b.shooting||'')?-1:1;});var html='<option value="">収録週を選んでください</option>';sorted.forEach(function(w){html+='<option value="'+w.id+'">'+w.name+(w.shooting?'（収録：'+fmtS(w.shooting)+'）':'')+'</option>';});sel.innerHTML=html;}
+function onOAWeekChange(){var wid=parseInt(document.getElementById('oa-week-sel').value);var wk=getWeek(wid);if(wk&&wk.shooting){var sat=new Date(wk.shooting+'T00:00:00');sat.setDate(sat.getDate()+3);document.getElementById('oa-start').value=toDS(sat.getFullYear(),sat.getMonth()+1,sat.getDate());}showOAPreview();}
+function showOAPreview(){var wid=document.getElementById('oa-week-sel').value,st=document.getElementById('oa-start').value,prev=document.getElementById('oa-preview'),eprev=document.getElementById('oa-end-preview');if(!wid||!st){prev.style.display='none';if(eprev)eprev.style.display='none';return;}var sat=new Date(st+'T00:00:00');var fri=new Date(sat);fri.setDate(fri.getDate()+6);var en=toDS(fri.getFullYear(),fri.getMonth()+1,fri.getDate());if(eprev){eprev.innerHTML='&#128250; '+fmtS(st)+'（土）〜 '+fmtS(en)+'（金）';eprev.style.display='block';}var wk=getWeek(parseInt(wid));var vv=D.vtrs.filter(function(v){return v.weekId===parseInt(wid);});var vn=vv.map(function(v){return v.name||'（未定）';}).join('、');var lines=[];if(wk)lines.push('&#128197; '+wk.name);if(vn)lines.push('&#127916; '+vn);lines.push('&#128250; OA：'+fmtS(st)+'（土）〜 '+fmtS(en)+'（金）');prev.innerHTML=lines.join('<br>');prev.style.display='block';}
+function saveOA(){var wid=parseInt(document.getElementById('oa-week-sel').value);if(!wid){showToast('⚠ 収録週を選択してください');return;}var st=document.getElementById('oa-start').value;if(!st){showToast('⚠ OA開始日を入力してください');return;}var sat=new Date(st+'T00:00:00');var fri=new Date(sat);fri.setDate(fri.getDate()+6);var en=toDS(fri.getFullYear(),fri.getMonth()+1,fri.getDate());if(editingOAId){for(var i=0;i<D.oaSchedules.length;i++){if(D.oaSchedules[i].id===editingOAId){D.oaSchedules[i]={id:editingOAId,weekId:wid,start:st,end:en};break;}}showToast('✅ 放送予定を更新しました');}else{D.oaSchedules.push({id:nextId.oa++,weekId:wid,start:st,end:en});showToast('✅ 放送予定を登録しました');}saveData();renderCalendar();closeModal('oa-modal');}
+function deleteOA(id){if(!confirm('この放送予定を削除しますか？'))return;D.oaSchedules=D.oaSchedules.filter(function(o){return o.id!==id;});saveData();renderCalendar();showToast('&#128465; 削除しました');}
+
+// ===== VTRマスター =====
+function renderVtrMaster(){var el=document.getElementById('vtrmaster-list');if(!el)return;if(!D.vtrMaster||D.vtrMaster.length===0){el.innerHTML='<div class="empty-msg">VTRタイトルがまだ登録されていません。</div>';return;}el.innerHTML=D.vtrMaster.map(function(m){return'<div style="background:#120808;border:1px solid var(--bd2);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:.82rem;color:var(--text)">&#127916; '+m.title+'</div>'+(m.memo?'<div style="font-size:.68rem;color:var(--muted)">'+m.memo+'</div>':'')+'</div><button class="rpg-btn gray sm" onclick="delVtrMaster('+m.id+')">&#128465;</button></div>';}).join('');}
+function fillVtrNameSelect(){var sel=document.getElementById('v-name-sel');if(!sel)return;var html='<option value="">── 候補から選ぶ ──</option>';if(D.vtrMaster)D.vtrMaster.forEach(function(m){html+='<option value="'+m.title+'">'+m.title+'</option>';});sel.innerHTML=html;document.querySelectorAll('.extra-vtr-sel').forEach(function(s){var cur=s.value;s.innerHTML=html;s.value=cur;});}
+function onVtrNameSelect(){var sel=document.getElementById('v-name-sel');if(sel.value)document.getElementById('v-name').value=sel.value;}
+function addVtrMaster(){var title=document.getElementById('vm-title').value.trim();if(!title){showToast('⚠ タイトルを入力してください');return;}if(!D.vtrMaster)D.vtrMaster=[];if(D.vtrMaster.some(function(m){return m.title===title;})){showToast('⚠ 同じタイトルが既にあります');return;}D.vtrMaster.push({id:nextId.vm++,title:title,memo:document.getElementById('vm-memo').value.trim()});saveData();renderVtrMaster();fillVtrNameSelect();closeModal('vtrm-modal');document.getElementById('vm-title').value='';document.getElementById('vm-memo').value='';showToast('✅ 登録しました');}
+function delVtrMaster(id){D.vtrMaster=D.vtrMaster.filter(function(m){return m.id!==id;});saveData();renderVtrMaster();fillVtrNameSelect();}
+
+// ===== キャストマスター =====
+function renderCastMaster(){var el=document.getElementById('castmaster-list');if(!el)return;if(!D.castMaster||D.castMaster.length===0){el.innerHTML='<div class="empty-msg">出演者がまだ登録されていません。</div>';return;}el.innerHTML=D.castMaster.map(function(m){return'<div style="background:#120808;border:1px solid var(--bd2);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:.82rem;color:var(--text)">&#127908; '+m.name+'</div>'+(m.memo?'<div style="font-size:.68rem;color:var(--muted)">'+m.memo+'</div>':'')+'</div><button class="rpg-btn gray sm" onclick="delCastMaster('+m.id+')">&#128465;</button></div>';}).join('');}
+function fillCastChecks(){var c=document.getElementById('v-cast-checks');if(!c)return;c.innerHTML='';if(!D.castMaster||D.castMaster.length===0){c.innerHTML='<div style="font-size:.7rem;color:var(--muted)">（VTR管理タブで出演者を登録してください）</div>';return;}D.castMaster.forEach(function(m){var lbl=document.createElement('label');lbl.style.cssText='display:flex;align-items:center;gap:4px;font-size:.78rem;color:var(--text);background:#0a0a1a;border:1px solid var(--bd2);padding:4px 8px;cursor:pointer;';lbl.innerHTML='<input type="checkbox" id="cast-chk-'+m.id+'" value="'+m.name+'"> '+m.name;c.appendChild(lbl);});}
+function onCastOtherChk(){var chk=document.getElementById('v-cast-other-chk');document.getElementById('v-cast-other').style.display=chk.checked?'block':'none';}
+function getSelCast(){var s=[];if(!D.castMaster)return s;D.castMaster.forEach(function(m){var c=document.getElementById('cast-chk-'+m.id);if(c&&c.checked)s.push(m.name);});return s;}
+function setCastChecks(castArr,castOther){if(castArr&&castArr.length>0||castOther){var sec=document.getElementById('v-cast-section'),btn=document.getElementById('v-cast-toggle-btn');if(sec)sec.style.display='block';if(btn)btn.textContent='出演者を閉じる';}if(!D.castMaster)return;D.castMaster.forEach(function(m){var c=document.getElementById('cast-chk-'+m.id);if(c)c.checked=castArr&&castArr.indexOf(m.name)!==-1;});var oc=document.getElementById('v-cast-other-chk'),oi=document.getElementById('v-cast-other');if(castOther){if(oc)oc.checked=true;if(oi){oi.value=castOther;oi.style.display='block';}}else{if(oc)oc.checked=false;if(oi){oi.value='';oi.style.display='none';}}}
+function clearCastChecks(){if(D.castMaster)D.castMaster.forEach(function(m){var c=document.getElementById('cast-chk-'+m.id);if(c)c.checked=false;});var oc=document.getElementById('v-cast-other-chk'),oi=document.getElementById('v-cast-other');if(oc)oc.checked=false;if(oi){oi.value='';oi.style.display='none';}var sec=document.getElementById('v-cast-section'),btn=document.getElementById('v-cast-toggle-btn');if(sec)sec.style.display='none';if(btn)btn.textContent='出演者を選択';}
+function toggleCastSection(){var sec=document.getElementById('v-cast-section'),btn=document.getElementById('v-cast-toggle-btn');if(sec.style.display==='none'){sec.style.display='block';btn.textContent='出演者を閉じる';}else{sec.style.display='none';btn.textContent='出演者を選択';}}
+function addCastMaster(){var name=document.getElementById('cm-name').value.trim();if(!name){showToast('⚠ 名前を入力してください');return;}if(!D.castMaster)D.castMaster=[];if(D.castMaster.some(function(m){return m.name===name;})){showToast('⚠ 同じ名前が既にあります');return;}D.castMaster.push({id:nextId.cm++,name:name,memo:document.getElementById('cm-memo').value.trim()});saveData();renderCastMaster();fillCastChecks();closeModal('cast-modal');document.getElementById('cm-name').value='';document.getElementById('cm-memo').value='';showToast('✅ 登録しました');}
+function delCastMaster(id){D.castMaster=D.castMaster.filter(function(m){return m.id!==id;});saveData();renderCastMaster();fillCastChecks();}
+function buildCastStr(v){var p=[];if(v.cast&&v.cast.length>0)p=p.concat(v.cast);if(v.castOther)p.push(v.castOther);return p.join('・');}
+
+// ===== 複数VTR =====
+function addVtrRow(){extraVtrCount++;var idx=extraVtrCount;var html='<option value="">── 候補から選ぶ ──</option>';if(D.vtrMaster)D.vtrMaster.forEach(function(m){html+='<option value="'+m.title+'">'+m.title+'</option>';});var div=document.createElement('div');div.id='extra-vtr-'+idx;div.style.cssText='background:#120808;border:1px solid var(--bd2);padding:10px;margin-bottom:8px;';div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font-size:.72rem;color:var(--muted)">追加VTR '+idx+'本目</div><button class="rpg-btn gray sm" onclick="removeVtrRow('+idx+')">&#10005;</button></div><select class="pix-input pix-select extra-vtr-sel" id="extra-vtr-sel-'+idx+'" onchange="onExtraVtrSelect('+idx+')">'+html+'</select><input class="pix-input" id="extra-vtr-name-'+idx+'" placeholder="または直接入力" style="margin-top:6px">';document.getElementById('v-extra-vtrs').appendChild(div);}
+function removeVtrRow(idx){var el=document.getElementById('extra-vtr-'+idx);if(el)el.remove();}
+function onExtraVtrSelect(idx){var sel=document.getElementById('extra-vtr-sel-'+idx),inp=document.getElementById('extra-vtr-name-'+idx);if(sel&&inp&&sel.value)inp.value=sel.value;}
+function getExtraVtrNames(){var names=[],c=document.getElementById('v-extra-vtrs');if(!c)return names;c.querySelectorAll('[id^="extra-vtr-"]').forEach(function(div){var idx=div.id.replace('extra-vtr-','');var inp=document.getElementById('extra-vtr-name-'+idx);if(inp&&inp.value.trim())names.push(inp.value.trim());});return names;}
+function clearExtraVtrs(){var c=document.getElementById('v-extra-vtrs');if(c)c.innerHTML='';extraVtrCount=0;}
+
+// ===== HELPERS =====
+function getVtr(id){for(var i=0;i<D.vtrs.length;i++){if(D.vtrs[i].id===id)return D.vtrs[i];}return null;}
+function getWeek(id){for(var i=0;i<D.weeks.length;i++){if(D.weeks[i].id===id)return D.weeks[i];}return null;}
+function gfv(selId,othId){var s=document.getElementById(selId).value;return s==='__other__'?document.getElementById(othId).value.trim():s;}
+function onOtherChange(selId,othId){document.getElementById(othId).style.display=document.getElementById(selId).value==='__other__'?'block':'none';}
+function setSV(selId,othId,val){var sel=document.getElementById(selId),oth=document.getElementById(othId);if(!val){sel.value='';oth.style.display='none';return;}var found=false;for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===val){sel.value=val;found=true;break;}}if(!found){sel.value='__other__';oth.value=val;oth.style.display='block';}else{oth.style.display='none';}}
+
+// ===== スケジュールフォーム内OA設定 =====
+function autoFillVtrOA() {
+  var sel = document.getElementById('v-week');
+  var opt = sel ? sel.options[sel.selectedIndex] : null;
+  if (!opt || !opt.value) return;
+  var satStr = opt.getAttribute('data-sat');
+  if (satStr && !document.getElementById('v-oa-start').value) {
+    document.getElementById('v-oa-start').value = satStr;
+    showVtrOAPreview();
+  }
+}
+
+function showVtrOAPreview() {
+  var st = document.getElementById('v-oa-start').value;
+  var prev = document.getElementById('v-oa-preview');
+  if (!st) { prev.style.display = 'none'; return; }
+  var sat = new Date(st + 'T00:00:00');
+  var fri = new Date(sat); fri.setDate(fri.getDate() + 6);
+  prev.innerHTML = '&#128250; ' + (sat.getMonth()+1) + '/' + sat.getDate() + '（土）〜 ' + (fri.getMonth()+1) + '/' + fri.getDate() + '（金）';
+  prev.style.display = 'block';
+}
+
+function clearVtrOASection() {
+  var st = document.getElementById('v-oa-start');
+  var prev = document.getElementById('v-oa-preview');
+  if (st) st.value = '';
+  if (prev) prev.style.display = 'none';
+}
+
+function setVtrOASection(oaStart) {
+  if (!oaStart) return;
+  var st = document.getElementById('v-oa-start');
+  if (st) st.value = oaStart;
+  showVtrOAPreview();
+}
+
+function clearVtrForm(){['v-name','v-memo','v-dir-other','v-acam-other','v-bcam-other','v-sound-other'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});['v-dir','v-acam','v-bcam','v-sound','v-name-sel'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});['v-dir-other','v-acam-other','v-bcam-other','v-sound-other'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});clearExtraVtrs();clearCastChecks();clearVtrOASection();}
+function openVtrForWeek(wid){openVtrModal();document.getElementById('v-week').value=wid;}
+function quickAddWeek(sd){var d=new Date(sd+'T00:00:00');var sat=new Date(d);sat.setDate(sat.getDate()+3);document.getElementById('w-name').value=(d.getMonth()+1)+'月'+d.getDate()+'日収録週';document.getElementById('w-shooting').value=sd;document.getElementById('w-broadcast').value=toDS(sat.getFullYear(),sat.getMonth()+1,sat.getDate());openModal('week-modal');}
+function toDS(y,m,d){return y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);}
+function fmtS(str){if(!str)return'';var d=new Date(str+'T00:00:00');return(d.getMonth()+1)+'/'+d.getDate();}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+// ===== ナレーション =====
+var editingNareId = null;
+
+function openNareModal() {
+  editingNareId = null;
+  document.getElementById('nare-modal-title').textContent = 'ナレーション収録を追加';
+  document.getElementById('nare-save-btn').textContent = '追加';
+  document.getElementById('nare-date').value = '';
+  document.getElementById('nare-time').value = '';
+  document.getElementById('nare-memo').value = '';
+  openModal('nare-modal');
+  fillNareVtrChecks([]);
+}
+
+function fillNareVtrChecks(selectedIds) {
+  var container = document.getElementById('nare-vtr-checks');
+  if(!container) return;
+  container.innerHTML = '';
+  var sorted = D.vtrs.filter(function(v){ return v.name; }).sort(function(a,b){
+    var wa = getWeek(a.weekId), wb = getWeek(b.weekId);
+    return (wa ? wa.shooting||'' : '') < (wb ? wb.shooting||'' : '') ? -1 : 1;
+  });
+  if(sorted.length === 0) {
+    container.innerHTML = '<div style="font-size:.72rem;color:var(--muted)">VTRがまだ登録されていません</div>';
+    return;
+  }
+  sorted.forEach(function(v) {
+    var wk = getWeek(v.weekId);
+    var lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text);cursor:pointer;padding:4px 0;border-bottom:1px solid rgba(83,52,131,.3);';
+    var chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.value = v.id;
+    chk.id = 'nare-chk-' + v.id;
+    chk.checked = selectedIds.indexOf(v.id) !== -1;
+    var span = document.createElement('span');
+    span.innerHTML = (v.name || 'タイトル未定') + (wk ? '<span style="font-size:.65rem;color:var(--muted);margin-left:4px">' + wk.name + '</span>' : '');
+    lbl.appendChild(chk);
+    lbl.appendChild(span);
+    container.appendChild(lbl);
+  });
+}
+
+function getCheckedNareVtrs() {
+  var ids = [];
+  var chks = document.querySelectorAll('[id^="nare-chk-"]');
+  for(var i=0; i<chks.length; i++) {
+    if(chks[i].checked) ids.push(parseInt(chks[i].value));
+  }
+  return ids;
+}
+
+function editNare(id) {
+  var n = D.nareSchedules.find(function(x){ return x.id === id; });
+  if(!n) return;
+  editingNareId = id;
+  document.getElementById('nare-modal-title').textContent = 'ナレーション収録を編集';
+  document.getElementById('nare-save-btn').textContent = '保存';
+  document.getElementById('nare-date').value = n.date;
+  document.getElementById('nare-time').value = n.time || '';
+  document.getElementById('nare-memo').value = n.memo || '';
+  openModal('nare-modal');
+  fillNareVtrChecks(n.vtrIds || []);
+}
+
+function saveNare() {
+  try {
+    var date = document.getElementById('nare-date').value;
+    if(!date) { showToast('⚠ 収録日を入力してください'); return; }
+    var vtrIds = getCheckedNareVtrs();
+    if(vtrIds.length === 0) { showToast('⚠ 企画を1つ以上選択してください'); return; }
+    var time = document.getElementById('nare-time').value;
+    var memo = document.getElementById('nare-memo').value.trim();
+    if(!D.nareSchedules) D.nareSchedules = [];
+    if(editingNareId) {
+      for(var i=0; i<D.nareSchedules.length; i++) {
+        if(D.nareSchedules[i].id === editingNareId) {
+          D.nareSchedules[i] = {id: editingNareId, date: date, time: time, vtrIds: vtrIds, memo: memo};
+          break;
+        }
+      }
+      showToast('✅ 更新しました');
+    } else {
+      D.nareSchedules.push({id: nextId.nare++, date: date, time: time, vtrIds: vtrIds, memo: memo});
+      showToast('✅ 追加しました');
+    }
+    saveData(); renderNareList(); closeModal('nare-modal');
+  } catch(e) {
+    showToast('エラー: ' + e.message);
+  }
+}
+
+function deleteNare(id) {
+  if(!confirm('このナレーション収録を削除しますか？')) return;
+  D.nareSchedules = D.nareSchedules.filter(function(x){ return x.id !== id; });
+  saveData(); renderNareList(); showToast('削除しました');
+}
+
+function renderNareList() {
+  try {
+  var el = document.getElementById('nare-list');
+  if(!el) return;
+  if(!D.nareSchedules) D.nareSchedules = [];
+  if(D.nareSchedules.length === 0) {
+    el.innerHTML = '<div class="empty-msg">ナレーション収録がありません。<br>「＋ 日程追加」から登録してください。</div>';
+    return;
+  }
+  var sorted = D.nareSchedules.slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  var html = '';
+  sorted.forEach(function(n) {
+    var d = new Date(n.date + 'T00:00:00');
+    var dow = ['日','月','火','水','木','金','土'][d.getDay()];
+    var dateStr = (d.getMonth()+1) + '/' + d.getDate() + '（' + dow + '）';
+    var vtrsHtml = (n.vtrIds||[]).map(function(vid){
+      var v = getVtr(vid);
+      if(!v) return '';
+      var wk = getWeek(v.weekId);
+      return '<div style="font-size:.78rem;color:var(--text);padding:4px 0;border-bottom:1px solid rgba(83,52,131,.3)">' +
+        (v.name||'タイトル未定') + (wk ? '<span style="font-size:.65rem;color:var(--muted);margin-left:6px">' + wk.name + '</span>' : '') + '</div>';
+    }).join('');
+    html += '<div style="background:#120808;border:2px solid var(--bd2);margin-bottom:10px;overflow:hidden">' +
+      '<div style="background:var(--panel2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd2)">' +
+        '<div style="font-size:.88rem;font-weight:bold;color:var(--yellow)">' + dateStr + (n.time ? '　' + n.time : '') + '</div>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button class="rpg-btn gray sm" onclick="editNare(' + n.id + ')">編集</button>' +
+          '<button class="rpg-btn gray sm" onclick="deleteNare(' + n.id + ')">削除</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:8px 12px">' +
+        '<div style="font-size:.65rem;color:var(--muted);margin-bottom:4px">収録企画</div>' +
+        vtrsHtml +
+        (n.memo ? '<div style="font-size:.72rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed var(--bd2)">メモ：' + n.memo + '</div>' : '') +
+      '</div></div>';
+  });
+  el.innerHTML = html;
+  } catch(e) { console.log('renderNareList error:',e); }
+}
+
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+document.querySelectorAll('.modal-bg').forEach(function(bg){bg.addEventListener('click',function(e){if(e.target===bg)bg.classList.remove('open');});});
+
+render();
+cloudLoad();
+
+// ピクセルアートお城を描画
+(function(){
+  var canvas = document.getElementById('px-castle');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W=24, H=28;
+  var pixels = [
+    // 屋根の旗
+    [11,0,'#c0001a'],[12,0,'#c0001a'],
+    [10,1,'#c0001a'],[11,1,'#c0001a'],[12,1,'#c0001a'],[13,1,'#c0001a'],
+    // 天守閣
+    [8,2,'#eee'],[9,2,'#eee'],[10,2,'#c0001a'],[11,2,'#c0001a'],[12,2,'#c0001a'],[13,2,'#eee'],[14,2,'#eee'],[15,2,'#eee'],
+    [7,3,'#eee'],[8,3,'#ccc'],[9,3,'#ccc'],[10,3,'#ccc'],[11,3,'#ccc'],[12,3,'#ccc'],[13,3,'#ccc'],[14,3,'#ccc'],[15,3,'#ccc'],[16,3,'#eee'],
+    [7,4,'#aaa'],[8,4,'#bbb'],[9,4,'#bbb'],[10,4,'#bbb'],[11,4,'#333'],[12,4,'#333'],[13,4,'#bbb'],[14,4,'#bbb'],[15,4,'#bbb'],[16,4,'#aaa'],
+    [6,5,'#eee'],[7,5,'#ccc'],[8,5,'#c0001a'],[9,5,'#c0001a'],[10,5,'#c0001a'],[11,5,'#c0001a'],[12,5,'#c0001a'],[13,5,'#c0001a'],[14,5,'#c0001a'],[15,5,'#c0001a'],[16,5,'#ccc'],[17,5,'#eee'],
+    // 二の丸
+    [5,6,'#bbb'],[6,6,'#bbb'],[7,6,'#bbb'],[8,6,'#bbb'],[9,6,'#bbb'],[10,6,'#bbb'],[11,6,'#bbb'],[12,6,'#bbb'],[13,6,'#bbb'],[14,6,'#bbb'],[15,6,'#bbb'],[16,6,'#bbb'],[17,6,'#bbb'],[18,6,'#bbb'],
+    [5,7,'#999'],[6,7,'#aaa'],[7,7,'#aaa'],[8,7,'#333'],[9,7,'#333'],[10,7,'#aaa'],[11,7,'#aaa'],[12,7,'#aaa'],[13,7,'#333'],[14,7,'#333'],[15,7,'#aaa'],[16,7,'#aaa'],[17,7,'#aaa'],[18,7,'#999'],
+    [4,8,'#eee'],[5,8,'#c0001a'],[6,8,'#c0001a'],[7,8,'#c0001a'],[8,8,'#c0001a'],[9,8,'#c0001a'],[10,8,'#c0001a'],[11,8,'#c0001a'],[12,8,'#c0001a'],[13,8,'#c0001a'],[14,8,'#c0001a'],[15,8,'#c0001a'],[16,8,'#c0001a'],[17,8,'#c0001a'],[18,8,'#c0001a'],[19,8,'#eee'],
+    // 石垣
+    [3,9,'#888'],[4,9,'#888'],[5,9,'#888'],[6,9,'#888'],[7,9,'#888'],[8,9,'#888'],[9,9,'#888'],[10,9,'#888'],[11,9,'#888'],[12,9,'#888'],[13,9,'#888'],[14,9,'#888'],[15,9,'#888'],[16,9,'#888'],[17,9,'#888'],[18,9,'#888'],[19,9,'#888'],[20,9,'#888'],
+    [2,10,'#777'],[3,10,'#666'],[4,10,'#777'],[5,10,'#666'],[6,10,'#777'],[7,10,'#666'],[8,10,'#777'],[9,10,'#666'],[10,10,'#333'],[11,10,'#333'],[12,10,'#666'],[13,10,'#777'],[14,10,'#666'],[15,10,'#777'],[16,10,'#666'],[17,10,'#777'],[18,10,'#666'],[19,10,'#777'],[20,10,'#666'],[21,10,'#777'],
+    [1,11,'#888'],[2,11,'#888'],[3,11,'#888'],[4,11,'#888'],[5,11,'#888'],[6,11,'#888'],[7,11,'#888'],[8,11,'#888'],[9,11,'#888'],[10,11,'#888'],[11,11,'#888'],[12,11,'#888'],[13,11,'#888'],[14,11,'#888'],[15,11,'#888'],[16,11,'#888'],[17,11,'#888'],[18,11,'#888'],[19,11,'#888'],[20,11,'#888'],[21,11,'#888'],[22,11,'#888'],
+    [0,12,'#666'],[1,12,'#555'],[2,12,'#666'],[3,12,'#555'],[4,12,'#666'],[5,12,'#555'],[6,12,'#666'],[7,12,'#555'],[8,12,'#666'],[9,12,'#555'],[10,12,'#666'],[11,12,'#555'],[12,12,'#666'],[13,12,'#555'],[14,12,'#666'],[15,12,'#555'],[16,12,'#666'],[17,12,'#555'],[18,12,'#666'],[19,12,'#555'],[20,12,'#666'],[21,12,'#555'],[22,12,'#666'],[23,12,'#555'],
+  ];
+  pixels.forEach(function(p){ ctx.fillStyle=p[2]; ctx.fillRect(p[0],p[1],1,1); });
+})();
+
+</script>
+</body>
+</html>
